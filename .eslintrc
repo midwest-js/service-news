@@ -5,8 +5,17 @@
     "sourceType": "strict"
   },
 
+  "env": {
+    "node": true
+  },
+
   "rules": {
-    "import/no-unresolved": 0,
+    "prefer-const": [ 2, { "destructuring": "all" } ],
+    "semi": [ 2, "never" ],
+    "import/no-extraneous-dependencies": ["error", {"devDependencies": true, "optionalDependencies": false, "peerDependencies": false}],
+    "new-cap": 0,
+    "no-mixed-operators": 0,
+    "no-cond-assign": 0,
     "guard-for-in": 0,
     "global-require": 0,
     "no-underscore-dangle": 0,
@@ -34,18 +43,5 @@
     "no-shadow": 0,
     "spaced-comment": 0,
     "strict": [ 2, "global" ]
-  },
-
-  globals: {
-    "$": true,
-    "_": true,
-    "ENV": true,
-    "google": true,
-    "INITIAL_STATE": true,
-    "INITIAL_CONTEXT": true,
-    "LOGIN_USER": true,
-    "PWD": true,
-    "FB": true,
-    "Backbone": true
   }
 }
