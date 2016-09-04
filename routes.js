@@ -1,6 +1,6 @@
-var isAuthenticated = require('express-module-membership/passport/authorization-middleware').isAuthenticated;
+var isAuthenticated = require('express-module-membership/passport/authorization-middleware').isAuthenticated
 
-var mw = require('./middleware');
+var mw = require('./middleware')
 
 module.exports = [
   [ '/api/news-articles/', 'get', [ mw.formatQuery, mw.paginate, mw.find ]],
@@ -9,4 +9,4 @@ module.exports = [
   [ '/api/news-articles/:id', 'put', [ isAuthenticated, mw.put ]],
   [ '/api/news-articles/:id', 'patch', [ isAuthenticated, mw.patch ]],
   [ '/api/news-articles/:id', 'delete', [ isAuthenticated, mw.remove ]]
-];
+]
