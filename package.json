@@ -21,5 +21,8 @@
   "bugs": {
     "url": "https://github.com/thebitmill/midwest-service-news/issues"
   },
-  "homepage": "https://github.com/thebitmill/midwest-service-news#readme"
+  "homepage": "https://github.com/thebitmill/midwest-service-news#readme",
+  "dependencies": {
+    "midwest": "0.0.2"
+  }
 }

@@ -4,8 +4,8 @@ const mongoose = require('mongoose')
 const NewsArticle = require('./model')
 
 const mw = {
-  formatQuery: require('warepot/format-query'),
-  paginate: require('warepot/paginate')
+  formatQuery: require('midwest/middleware/format-query'),
+  paginate: require('midwest/middleware/paginate')
 }
 
 function create(req, res, next) {
@@ -13,23 +13,6 @@ function create(req, res, next) {
     if (err) return next(err)
 
     res.status(201).json(newsArticle)
-  })
-}
-
-function find(req, res, next) {
-  const page = Math.max(0, req.query.page) || 0
-  const perPage = Math.max(0, req.query.limit) || res.locals.perPage
-
-  const query = NewsArticle.find(_.omit(req.query, 'limit', 'sort', 'page'),
-    null,
-    { sort: req.query.sort || '-datePublished', lean: true })
-
-  if (perPage)
-    query.limit(perPage).skip(perPage * page)
-
-  query.exec(function (err, newsArticles) {
-    res.locals.newsArticles = newsArticles
-    next(err)
   })
 }
 
@@ -86,7 +69,24 @@ function getPublished(req, res, next) {
   })
 }
 
-function patch(req, res, next) {
+function query(req, res, next) {
+  const page = Math.max(0, req.query.page) || 0
+  const perPage = Math.max(0, req.query.limit) || res.locals.perPage
+
+  const query = NewsArticle.find(_.omit(req.query, 'limit', 'sort', 'page'),
+    null,
+    { sort: req.query.sort || '-datePublished', lean: true })
+
+  if (perPage)
+    query.limit(perPage).skip(perPage * page)
+
+  query.exec(function (err, newsArticles) {
+    res.locals.newsArticles = newsArticles
+    next(err)
+  })
+}
+
+function update(req, res, next) {
   const query = {}
 
   query[mongoose.Types.ObjectId.isValid(req.params.id) ? '_id' : '_hid'] = req.params.id
@@ -105,7 +105,7 @@ function patch(req, res, next) {
   })
 }
 
-function put(req, res, next) {
+function replace(req, res, next) {
   const query = {}
 
   query[mongoose.Types.ObjectId.isValid(req.params.id) ? '_id' : '_hid'] = req.params.id
@@ -137,7 +137,6 @@ function remove(req, res, next) {
 
 module.exports = {
   create,
-  find,
   findById,
   formatQuery: mw.formatQuery([ 'limit', 'sort', 'page' ], {
     headline: 'regex',
@@ -146,7 +145,8 @@ module.exports = {
   getAll,
   getLatest,
   paginate: mw.paginate(NewsArticle, 10),
-  patch,
-  put,
-  remove
+  query,
+  remove,
+  replace,
+  update
 }
