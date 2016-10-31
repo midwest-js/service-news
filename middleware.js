@@ -1,152 +1,97 @@
-'use strict'
+'use strict';
 
-const mongoose = require('mongoose')
-const NewsArticle = require('./model')
+const _ = require('lodash');
+const mongoose = require('mongoose');
 
-const mw = {
-  formatQuery: require('midwest/middleware/format-query'),
-  paginate: require('midwest/middleware/paginate')
-}
+const formatQuery = require('midwest/factories/format-query');
+const paginate = require('midwest/factories/paginate');
+const rest = require('midwest/factories/rest');
 
-function create(req, res, next) {
-  NewsArticle.create(req.body, function (err, newsArticle) {
-    if (err) return next(err)
-
-    res.status(201).json(newsArticle)
-  })
-}
+const NewsArticle = require('./model');
 
 function findById(req, res, next) {
-  if (req.params.id === 'new') return next()
+  if (req.params.id === 'new') return next();
 
-  const query = {}
+  const query = {};
 
-  query[mongoose.Types.ObjectId.isValid(req.params.id) ? '_id' : '_hid'] = req.params.id
+  query[mongoose.Types.ObjectId.isValid(req.params.id) ? '_id' : '_hid'] = req.params.id;
 
-  return NewsArticle.findOne(query, function (err, newsArticle) {
-    if (err) return next(err)
-    res.locals.newsArticle = newsArticle
-    next()
-  })
+  return NewsArticle.findOne(query, (err, newsArticle) => {
+    if (err) return next(err);
+    res.locals.newsArticle = newsArticle;
+    next();
+  });
 }
 
 function getAll(req, res, next) {
-  if (!req.user)
-    return getPublished(req, res, next)
+  if (!req.user) {
+    return getPublished(req, res, next);
+  }
 
-  NewsArticle.find({}).sort('-dateCreated').exec(function (err, newsArticles) {
-    if (err) return next(err)
+  NewsArticle.find({}).sort('-dateCreated').exec((err, newsArticles) => {
+    if (err) return next(err);
 
-    res.locals.newsArticles = newsArticles
-    next()
-  })
+    res.locals.newsArticles = newsArticles;
+    next();
+  });
 }
 
-function getLatest(howMany) {
-  howMany = howMany || 5
-  return function (req, res, next) {
+function getLatest(howMany = 5) {
+  return (req, res, next) => {
     // TODO only return needed shit.
-    const query = {}
+    const query = {};
+
     if (!req.user) {
-      query.datePublished = { $exists: true }
+      query.datePublished = { $exists: true };
     }
 
-    NewsArticle.find(query).sort('-dateCreated').limit(howMany).lean().exec(function (err, newsArticles) {
-      if (err) return next(err)
+    NewsArticle.find(query).sort('-dateCreated').limit(howMany).lean()
+      .exec((err, newsArticles) => {
+        if (err) return next(err);
 
-      res.locals.newsArticles = newsArticles
-      next()
-    })
-  }
+        res.locals.newsArticles = newsArticles;
+        next();
+      });
+  };
 }
 
 function getPublished(req, res, next) {
-  NewsArticle.find({ datePublished: { $ne: null } }).sort('-datePublished').exec(function (err, faqs) {
-    if (err) return next(err)
+  NewsArticle.find({ datePublished: { $ne: null } }).sort('-datePublished').lean().exec((err, newsArticles) => {
+    if (err) return next(err);
 
-    res.locals.faqs = faqs
-    next()
-  })
+    res.locals.newsArticles = newsArticles;
+
+    next();
+  });
 }
 
 function query(req, res, next) {
-  const page = Math.max(0, req.query.page) || 0
-  const perPage = Math.max(0, req.query.limit) || res.locals.perPage
+  const page = Math.max(0, req.query.page) || 0;
+  const perPage = Math.max(0, req.query.limit) || res.locals.perPage;
 
   const query = NewsArticle.find(_.omit(req.query, 'limit', 'sort', 'page'),
     null,
-    { sort: req.query.sort || '-datePublished', lean: true })
+    { sort: req.query.sort || '-datePublished', lean: true });
 
-  if (perPage)
-    query.limit(perPage).skip(perPage * page)
+  if (perPage) {
+    query.limit(perPage).skip(perPage * page);
+  }
 
-  query.exec(function (err, newsArticles) {
-    res.locals.newsArticles = newsArticles
-    next(err)
-  })
+  query.exec((err, newsArticles) => {
+    res.locals.newsArticles = newsArticles;
+    next(err);
+  });
 }
 
-function update(req, res, next) {
-  const query = {}
 
-  query[mongoose.Types.ObjectId.isValid(req.params.id) ? '_id' : '_hid'] = req.params.id
-
-  NewsArticle.findOne(query, function (err, newsArticle) {
-    delete req.body._id
-    delete req.body.__v
-
-    _.extend(newsArticle, req.body)
-
-    return newsArticle.save(function (err) {
-      if (err) return next(err)
-
-      return res.status(200).json(newsArticle)
-    })
-  })
-}
-
-function replace(req, res, next) {
-  const query = {}
-
-  query[mongoose.Types.ObjectId.isValid(req.params.id) ? '_id' : '_hid'] = req.params.id
-
-  NewsArticle.findOne(query, function (err, newsArticle) {
-    _.difference(_.keys(newsArticle.toObject()), _.keys(req.body)).forEach(function (key) {
-      newsArticle[key] = undefined
-    })
-
-    _.extend(newsArticle, _.omit(req.body, '_id', '__v'))
-
-    return newsArticle.save(function (err) {
-      if (err) return next(err)
-
-      return res.status(200).json(newsArticle)
-    })
-  })
-}
-
-function remove(req, res, next) {
-  return NewsArticle.findById(req.params.id, function (err, newsArticle) {
-    if (err) return next(err)
-    return newsArticle.remove(function (err) {
-      if (err) return next(err)
-      return res.sendStatus(204)
-    })
-  })
-}
-
-module.exports = {
-  create,
+module.exports = Object.assign(rest(NewsArticle), {
   findById,
-  formatQuery: mw.formatQuery([ 'limit', 'sort', 'page' ], {
+  formatQuery: formatQuery(['limit', 'sort', 'page'], {
     headline: 'regex',
-    datePublished: 'exists'
+    datePublished: 'exists',
   }),
   getAll,
   getLatest,
-  paginate: mw.paginate(NewsArticle, 10),
+  paginate: paginate(NewsArticle, 10),
   query,
-  remove,
-  replace,
-  update
-}
+});

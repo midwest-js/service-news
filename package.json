@@ -23,6 +23,9 @@
   },
   "homepage": "https://github.com/thebitmill/midwest-service-news#readme",
   "dependencies": {
-    "midwest": "0.0.2"
+    "express": "^4.14.0",
+    "lodash": "^4.16.4",
+    "midwest": "^0.1.2",
+    "mongopot": "0.0.2"
   }
 }
